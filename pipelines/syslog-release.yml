@@ -148,16 +148,12 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: cf-deployment-master
     - get: tycho-env-bbl-state
-      trigger: true
-      passed: [smoke-tests]
     - get: tycho-env-vars-store
     - get: tycho-env-integration-configs
     - get: syslog-release
       trigger: true
-      passed: [smoke-tests]
     - get: weekly
       trigger: true
-      passed: [smoke-tests]
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     input_mapping:
