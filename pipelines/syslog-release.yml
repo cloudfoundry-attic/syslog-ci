@@ -59,6 +59,7 @@ resources:
     private_key: ((tycho_env_git_deploy_key))
     paths:
     - deployment-vars.yml
+    - component_syslog_vars.yml
 - name: tycho-env-integration-configs
   type: git
   source:
@@ -66,17 +67,17 @@ resources:
     uri: git@github.com:cloudfoundry/tycho-env.git
     private_key: ((tycho_env_git_deploy_key))
     paths:
-    - cats_integration_config.json
+    - integration_config.json
 
 # Control
 - name: weekly
   type: time
   source:
     interval: 168h
-    location: US/Pacific
-    start: 9:00 AM
-    stop: 10:00 AM
-    days: [Tuesday]
+    location: US/Mountain
+    start: 3:00 PM
+    stop: 4:00 PM
+    days: [Wednesday]
 
 # Concourse Tasks
 - name: cf-deployment-concourse-tasks
@@ -169,7 +170,11 @@ jobs:
       vars-store: tycho-env-vars-store
       vars-files: tycho-env-vars-store
     params:
+      OPS_FILES: |
+        operations/use-compiled-releases.yml
+        operations/addons/enable-component-syslog.yml
       SYSTEM_DOMAIN: tycho.cf-app.com
+      VARS_FILES: component_syslog_vars.yml
     ensure:
       put: tycho-env-vars-store
       params:
