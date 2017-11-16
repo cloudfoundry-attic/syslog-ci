@@ -78,7 +78,7 @@ resources:
     uri: git@github.com:cloudfoundry/tycho-env.git
     private_key: ((tycho_env_git_deploy_key))
     paths:
-    - integration_config.json
+    - cats_integration_config.json
 
 # Control and Versions
 - name: weekly
