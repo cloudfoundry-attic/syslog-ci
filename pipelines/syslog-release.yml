@@ -13,18 +13,11 @@ groups:
 
 resources:
 # Manifests and Releases
-- name: syslog-release
-  type: git
-  source:
-    branch: develop
-    private_key: ((syslog_release_read_write_deploy_key))
-    uri: git@github.com:cloudfoundry/syslog-release.git
-- name: syslog-release-master
+- name: bosh-deployment
   type: git
   source:
     branch: master
-    private_key: ((syslog_release_read_write_deploy_key))
-    uri: git@github.com:cloudfoundry/syslog-release.git
+    uri: https://github.com/cloudfoundry/bosh-deployment.git
 - name: cf-deployment-master
   type: git
   source:
@@ -40,6 +33,18 @@ resources:
   source:
     branch: master
     uri: https://github.com/cloudfoundry/cats-concourse-task.git
+- name: syslog-release
+  type: git
+  source:
+    branch: develop
+    private_key: ((syslog_release_read_write_deploy_key))
+    uri: git@github.com:cloudfoundry/syslog-release.git
+- name: syslog-release-master
+  type: git
+  source:
+    branch: master
+    private_key: ((syslog_release_read_write_deploy_key))
+    uri: git@github.com:cloudfoundry/syslog-release.git
 
 # ENV
 - name: tycho-env-bbl-state
@@ -101,6 +106,7 @@ jobs:
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: tycho-env-bbl-state
+    - get: bosh-deployment
   - task: setup-infrastructure
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     params:
@@ -113,9 +119,10 @@ jobs:
       BBL_LB_KEY: ((tycho_cf_ssl_cert_private_key))
       LB_DOMAIN: tycho.cf-app.com
       BBL_ENV_NAME: tycho
+      OPS_FILES: "local-dns.yml"
     input_mapping:
       bbl-state: tycho-env-bbl-state
-      ops-files: tycho-env-bbl-state
+      ops-files: bosh-deployment
     ensure:
       put: tycho-env-bbl-state
       params:
@@ -173,6 +180,7 @@ jobs:
       OPS_FILES: |
         operations/use-compiled-releases.yml
         operations/addons/enable-component-syslog.yml
+        operations/experimental/use-bosh-dns.yml
       SYSTEM_DOMAIN: tycho.cf-app.com
       VARS_FILES: component_syslog_vars.yml
     ensure:
@@ -253,29 +261,29 @@ jobs:
     input_mapping:
       bbl-state: tycho-env-bbl-state
 
-- name: create-final-release
+- name: create-final-release-patch
   public: true
   build_logs_to_retain: 100
   plan:
   - aggregate:
-    - get: runtime-ci
+    - get: syslog-ci
     - get: syslog-release
       passed: [cf-acceptance-tests]
-      trigger: true
     - get: syslog-release-master
+    - get: syslog-release-version
+      params: { bump: patch }
   - task: create-final-release
-    file: runtime-ci/scripts/ci/create-final-release/task.yml
+    file: syslog-ci/tasks/create-final-release/task.yml
     input_mapping:
-      release-repo-master: syslog-release-master
       release-repo: syslog-release
+      release-version: syslog-release-version
     params:
-      RELEASE_NAME: syslog
       BLOBS_BUCKET_ACCESS_KEY_ID: ((syslog_release_blobs_buckets_access_key_id))
       BLOBS_BUCKET_SECRET_KEY: ((syslog_release_blobs_buckets_secret_access_key))
   - put: syslog-release-master
     params:
       repository: final-release-repo
-      tag: final-release-repo/version_number
+      tag: release-version/version_number
       tag_prefix: v
   - task: merge-master-into-develop
     file: runtime-ci/scripts/ci/merge-master-into-develop/task.yml
@@ -285,3 +293,5 @@ jobs:
   - put: syslog-release
     params:
       repository: final-release-repo
+  - put: syslog-release-version
+    params: { file: syslog-release-version/version }
