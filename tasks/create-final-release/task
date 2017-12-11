@@ -18,7 +18,7 @@ EOF
 }
 
 function create_final_release() {
-  bosh -n create-release --final --version="{$version}"
+  bosh -n create-release --final --version="${version}"
   EXIT_STATUS=${PIPESTATUS[0]}
 
   if [ ! "$EXIT_STATUS" = "0" ]; then
