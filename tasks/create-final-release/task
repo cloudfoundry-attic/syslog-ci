@@ -10,7 +10,8 @@ function write_private_yaml() {
     cat > config/private.yml <<EOF
 ---
 blobstore:
-  s3:
+  provider: s3
+  options:
     secret_access_key: ${BLOBS_BUCKET_SECRET_KEY}
     access_key_id: ${BLOBS_BUCKET_ACCESS_KEY_ID}
 EOF
