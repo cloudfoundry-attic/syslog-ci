@@ -41,7 +41,7 @@ function main() {
     create_final_release
     commit_final_release
   popd > /dev/null
-  git clone develop-branch final-release-repo
+  git clone release-repo final-release-repo
 }
 
 main
