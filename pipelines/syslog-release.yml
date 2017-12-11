@@ -39,6 +39,9 @@ resources:
     branch: develop
     private_key: ((syslog_release_read_write_deploy_key))
     uri: git@github.com:cloudfoundry/syslog-release.git
+    ignore_paths:
+    - ".final_builds/*"
+    - "releases/*"
 - name: syslog-release-master
   type: git
   source:
@@ -88,7 +91,7 @@ resources:
   source:
     initial_version: "11.0.0"
     driver: git
-    uri: https://github.com/cloudfoundry/syslog-ci
+    uri: git@github.com:cloudfoundry/syslog-ci
     branch: syslog-release-version
     file: version
     private_key: ((syslog_ci_versions_read_write_deploy_key))
@@ -280,6 +283,7 @@ jobs:
   build_logs_to_retain: 100
   plan:
   - aggregate:
+    - get: runtime-ci
     - get: syslog-ci
     - get: syslog-release
       passed: [cf-acceptance-tests]
