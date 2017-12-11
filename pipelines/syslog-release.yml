@@ -297,7 +297,7 @@ jobs:
   - put: syslog-release-master
     params:
       repository: final-release-repo
-      tag: release-version/version_number
+      tag: syslog-release-version/version
       tag_prefix: v
   - task: merge-master-into-develop
     file: runtime-ci/scripts/ci/merge-master-into-develop/task.yml
