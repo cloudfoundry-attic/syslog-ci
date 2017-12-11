@@ -5,7 +5,7 @@ groups:
   - deploy-cf-with-created-syslog
   - cf-acceptance-tests
   - delete-cf-deployment
-  - create-final-release
+  - create-final-release-patch
 - name: infrastructure
   jobs:
   - setup-infrastructure
@@ -74,7 +74,7 @@ resources:
     paths:
     - integration_config.json
 
-# Control
+# Control and Versions
 - name: weekly
   type: time
   source:
@@ -83,6 +83,15 @@ resources:
     start: 3:00 PM
     stop: 4:00 PM
     days: [Wednesday]
+- name: syslog-release-version
+  type: semver
+  source:
+    initial_version: "11.0.0"
+    driver: git
+    uri: https://github.com/cloudfoundry/syslog-ci
+    branch: syslog-release-version
+    file: version
+    private_key: ((syslog_ci_versions_read_write_deploy_key))
 
 # Concourse Tasks
 - name: cf-deployment-concourse-tasks
@@ -96,6 +105,11 @@ resources:
   source:
     branch: master
     uri: https://github.com/cloudfoundry/runtime-ci.git
+- name: syslog-ci
+  type: git
+  source:
+    branch: master
+    uri: https://github.com/cloudfoundry/syslog-ci.git
 
 jobs:
 - name: setup-infrastructure
