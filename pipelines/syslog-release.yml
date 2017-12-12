@@ -112,11 +112,6 @@ resources:
     branch: master
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
     tag_filter: v4.*
-- name: runtime-ci
-  type: git
-  source:
-    branch: master
-    uri: https://github.com/cloudfoundry/runtime-ci.git
 - name: syslog-ci
   type: git
   source:
@@ -291,7 +286,6 @@ jobs:
   build_logs_to_retain: 100
   plan:
   - aggregate:
-    - get: runtime-ci
     - get: syslog-ci
     - get: syslog-release
       passed: [cf-acceptance-tests]
@@ -311,13 +305,9 @@ jobs:
       repository: final-release-repo
       tag: syslog-release-version/version
       tag_prefix: v
-  - task: merge-master-into-develop
-    file: runtime-ci/scripts/ci/merge-master-into-develop/task.yml
-    input_mapping:
-      release-repo-master: syslog-release-master
-      release-repo: syslog-release
   - put: syslog-release-develop
     params:
-      repository: final-release-repo
+      repository: syslog-release-master
+      merge: true
   - put: syslog-release-version
     params: { file: syslog-release-version/version }
