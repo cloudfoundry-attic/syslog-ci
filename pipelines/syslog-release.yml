@@ -48,6 +48,15 @@ resources:
     branch: master
     private_key: ((syslog_release_read_write_deploy_key))
     uri: git@github.com:cloudfoundry/syslog-release.git
+# We have a second (explicitly develop) copy of this resource
+# to avoid creating new (triggering) versions
+# when putting master to develop.
+- name: syslog-release-develop
+  type: git
+  source:
+    branch: develop
+    private_key: ((syslog_release_read_write_deploy_key))
+    uri: git@github.com:cloudfoundry/syslog-release.git
 
 # ENV
 - name: tycho-env-bbl-state
@@ -262,7 +271,6 @@ jobs:
   build_logs_to_retain: 100
   plan:
   - aggregate:
-    - get: runtime-ci
     - get: cf-deployment-concourse-tasks
     - get: tycho-env-bbl-state
       trigger: true
@@ -308,7 +316,7 @@ jobs:
     input_mapping:
       release-repo-master: syslog-release-master
       release-repo: syslog-release
-  - put: syslog-release
+  - put: syslog-release-develop
     params:
       repository: final-release-repo
   - put: syslog-release-version
