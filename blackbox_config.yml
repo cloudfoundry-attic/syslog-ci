@@ -1,0 +1,8 @@
+hostname: local
+
+syslog:
+  destination:
+    transport: udp
+    address: 127.0.0.1:514
+
+  source_dir: /tmp/syslog-test/ingress
