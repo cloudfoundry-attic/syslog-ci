@@ -51,9 +51,7 @@ var _ = Describe("syslog", func() {
 		BeforeEach(func() {
 			// TODO create syslog configuration file
 
-			syslogRestart := exec.Command("sudo", "service", "syslog", "restart")
-			err := syslogRestart.Run()
-			Expect(err).ToNot(HaveOccurred())
+			RestartSyslog()
 		})
 
 		It("syslog writes received logs to file", func() {
@@ -64,7 +62,7 @@ var _ = Describe("syslog", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(n).To(BeNumerically(">", 0))
 
-			time.Sleep(3 * time.Second) // wait for syslog to process the log entry
+			time.Sleep(time.Second) // wait for syslog to process the log entry
 
 			outputFile, err := os.Open(egressDir + "/test.log")
 			Expect(err).NotTo(HaveOccurred())
@@ -87,9 +85,7 @@ var _ = Describe("syslog", func() {
 
 			// TODO create syslog configuration file
 
-			syslogRestart := exec.Command("sudo", "service", "syslog", "restart")
-			err := syslogRestart.Run()
-			Expect(err).ToNot(HaveOccurred())
+			RestartSyslog()
 
 			// TODO - currently we assume that blackbox is installed and on PATH
 
@@ -106,7 +102,7 @@ var _ = Describe("syslog", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(n).ToNot(Equal(0))
 
-			time.Sleep(3 * time.Second) // wait for syslog to process the log entry
+			time.Sleep(time.Second) // wait for syslog to process the log entry
 
 			// TODO - configure the syslog so that the target depends on test setup
 
@@ -125,3 +121,9 @@ var _ = Describe("syslog", func() {
 		})
 	})
 })
+
+func RestartSyslog() {
+	syslogRestart := exec.Command("sudo", "service", "rsyslog", "restart")
+	err := syslogRestart.Run()
+	Expect(err).ToNot(HaveOccurred())
+}
