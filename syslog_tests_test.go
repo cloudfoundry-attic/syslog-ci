@@ -17,11 +17,11 @@ import (
 )
 
 var (
-	testDir     = "/tmp/syslog-test"
-	resourceDir = fmt.Sprintf("%s/resources", testDir)
-	ingressDir  = fmt.Sprintf("%s/ingress", testDir)
-	egressDir   = fmt.Sprintf("%s/egress", testDir)
-	testString  = "hello logging world!"
+	testDir        = "/tmp/syslog-test"
+	resourceDir    = fmt.Sprintf("%s/resources", testDir)
+	ingressDir     = fmt.Sprintf("%s/ingress", testDir)
+	egressFilename = fmt.Sprintf("%s/egress/output_from_syslog.log", testDir)
+	testString     = "hello logging world!"
 )
 
 var _ = Describe("syslog", func() {
@@ -48,8 +48,8 @@ var _ = Describe("syslog", func() {
 	Context("when a log is written directly to rsyslog udp listener", func() {
 
 		BeforeEach(func() {
-			// TODO create syslog configuration file
 
+			GenerateTestOutputConfig(egressFilename)
 			RestartSyslog()
 		})
 
@@ -78,8 +78,7 @@ var _ = Describe("syslog", func() {
 
 		BeforeEach(func() {
 
-			// TODO create syslog configuration file
-
+			GenerateTestOutputConfig(egressFilename)
 			RestartSyslog()
 
 			// TODO - currently we assume that blackbox is installed and on PATH
@@ -114,7 +113,7 @@ var _ = Describe("syslog", func() {
 })
 
 func GetOutputBytes() []byte {
-	outputFile, err := os.Open(egressDir + "/test.log")
+	outputFile, err := os.Open(egressFilename)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	outputBytes, err := ioutil.ReadAll(bufio.NewReader(outputFile))
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
