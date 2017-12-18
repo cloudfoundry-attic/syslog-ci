@@ -32,7 +32,7 @@ type BlackBoxConfigOptions struct {
 
 func GenerateBlackBoxConfig(options BlackBoxConfigOptions, dest string) {
 	file, err := os.Create(dest + "/blackbox_config.yml")
-	Expect(err).ToNot(HaveOccurred())
+	ExpectWithOffset(1, err).ToNot(HaveOccurred())
 
 	defer file.Close()
 
@@ -43,8 +43,8 @@ func GenerateBlackBoxConfig(options BlackBoxConfigOptions, dest string) {
 			options.Address,
 			options.SourceDir,
 		)))
-	Expect(err).ToNot(HaveOccurred())
-	Expect(n).To(BeNumerically(">", 0))
+	ExpectWithOffset(1, err).ToNot(HaveOccurred())
+	ExpectWithOffset(1, n).To(BeNumerically(">", 0))
 }
 
 func StartBlackbox(ingressDir, resourceDir string) *gexec.Session {
@@ -63,7 +63,7 @@ func StartBlackbox(ingressDir, resourceDir string) *gexec.Session {
 	)
 
 	bbSession, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-	Expect(err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	// blackbox needs a little time to start up before being ready to tail files
 	time.Sleep(time.Second)

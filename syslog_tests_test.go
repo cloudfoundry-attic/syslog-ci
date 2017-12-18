@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"os/exec"
-
 	"net"
 
 	. "github.com/onsi/ginkgo"
@@ -23,6 +21,7 @@ var (
 	resourceDir = fmt.Sprintf("%s/resources", testDir)
 	ingressDir  = fmt.Sprintf("%s/ingress", testDir)
 	egressDir   = fmt.Sprintf("%s/egress", testDir)
+	testString  = "hello logging world!"
 )
 
 var _ = Describe("syslog", func() {
@@ -58,20 +57,16 @@ var _ = Describe("syslog", func() {
 			conn, err := net.Dial("udp", "127.0.0.1:514")
 			Expect(err).ToNot(HaveOccurred())
 
-			n, err := conn.Write([]byte("hello logging world!"))
+			n, err := conn.Write([]byte(testString))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(n).To(BeNumerically(">", 0))
 
 			time.Sleep(time.Second) // wait for syslog to process the log entry
 
-			outputFile, err := os.Open(egressDir + "/test.log")
-			Expect(err).NotTo(HaveOccurred())
-			outputBytes, err := ioutil.ReadAll(bufio.NewReader(outputFile))
-			Expect(err).ToNot(HaveOccurred())
+			outputBytes := GetOutputBytes()
 
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
-
-			Expect(string(outputBytes)).To(ContainSubstring("hello logging world!"))
+			Expect(string(outputBytes)).To(ContainSubstring(testString))
 		})
 	})
 
@@ -94,11 +89,11 @@ var _ = Describe("syslog", func() {
 
 		It("is written to a configured Output Module", func() {
 
-			file, err := os.Create(ingressDir + "/test.log")
+			file, err := os.Create(ingressDir + "/watched_by_blackbox.log")
 			Expect(err).ToNot(HaveOccurred())
 			defer file.Close()
 
-			n, err := file.Write([]byte("hello logging world!\n"))
+			n, err := file.Write([]byte(testString + "\n"))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(n).ToNot(Equal(0))
 
@@ -106,14 +101,10 @@ var _ = Describe("syslog", func() {
 
 			// TODO - configure the syslog so that the target depends on test setup
 
-			outputFile, err := os.Open(egressDir + "/test.log")
-			Expect(err).NotTo(HaveOccurred())
-			outputBytes, err := ioutil.ReadAll(bufio.NewReader(outputFile))
-			Expect(err).ToNot(HaveOccurred())
+			outputBytes := GetOutputBytes()
 
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
-
-			Expect(string(outputBytes)).To(ContainSubstring("hello logging world!"))
+			Expect(string(outputBytes)).To(ContainSubstring(testString))
 		})
 
 		AfterEach(func() {
@@ -122,8 +113,10 @@ var _ = Describe("syslog", func() {
 	})
 })
 
-func RestartSyslog() {
-	syslogRestart := exec.Command("sudo", "service", "rsyslog", "restart")
-	err := syslogRestart.Run()
-	Expect(err).ToNot(HaveOccurred())
+func GetOutputBytes() []byte {
+	outputFile, err := os.Open(egressDir + "/test.log")
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	outputBytes, err := ioutil.ReadAll(bufio.NewReader(outputFile))
+	ExpectWithOffset(1, err).ToNot(HaveOccurred())
+	return outputBytes
 }
