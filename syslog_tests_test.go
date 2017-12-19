@@ -23,8 +23,8 @@ var (
 	resourceDir    = fmt.Sprintf("%s/resources", testDir)
 	ingressDir     = fmt.Sprintf("%s/ingress", testDir)
 	egressFilename = fmt.Sprintf("%s/egress/output_from_syslog.log", testDir)
-	basicTestLine  = counterString(100)
-	longTestLine   = counterString(1025)
+	basicTestLine  = counterString(100, "*")
+	longTestLine   = counterString(1025, "*")
 )
 
 var _ = Describe("syslog", func() {
@@ -182,11 +182,11 @@ func GetOutputBytes() []byte {
 	return outputBytes
 }
 
-func counterString(l int) string {
+func counterString(l int, s string) string {
 	counterstring := ""
 	for len(counterstring) < l {
-		counterstring = counterstring + "*"
-		counterstring = counterstring + strconv.Itoa(len(counterstring))
+		counterstring += s
+		counterstring += strconv.Itoa(len(counterstring))
 	}
 
 	return counterstring[:l]
