@@ -5,22 +5,19 @@ import (
 	"os"
 	"os/exec"
 
-	"time"
+	"path"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
 
-var blackbox_config_template = `
----
+var blackbox_config_template = `---
 hostname: local
-
 syslog:
   destination:
     transport: %s
     address: %s
-
   source_dir: %s
 `
 
@@ -54,8 +51,10 @@ func StartBlackbox(ingressDir, resourceDir string) *gexec.Session {
 	bbOptions := BlackBoxConfigOptions{
 		Transport: "udp",
 		Address:   "127.0.0.1:514",
-		SourceDir: ingressDir,
+		SourceDir: path.Dir(ingressDir),
 	}
+
+	// TODO - currently we assume that blackbox is installed and on PATH
 
 	GenerateBlackBoxConfig(bbOptions, resourceDir)
 
@@ -67,9 +66,6 @@ func StartBlackbox(ingressDir, resourceDir string) *gexec.Session {
 
 	bbSession, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-	// blackbox needs a little time to start up before being ready to tail files
-	time.Sleep(time.Second)
 
 	return bbSession
 }

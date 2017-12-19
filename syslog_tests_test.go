@@ -21,7 +21,7 @@ import (
 var (
 	testDir        = "/tmp/syslog-test"
 	resourceDir    = fmt.Sprintf("%s/resources", testDir)
-	ingressDir     = fmt.Sprintf("%s/ingress", testDir)
+	ingressDir     = fmt.Sprintf("%s/ingress/test", testDir)
 	egressFilename = fmt.Sprintf("%s/egress/output_from_syslog.log", testDir)
 	basicTestLine  = counterString(100, "*")
 	longTestLine   = counterString(1025, "*")
@@ -32,24 +32,10 @@ var _ = Describe("syslog", func() {
 	// TODO - we can't set up and tear down the directories in an automated way yet:
 	// our rsyslog.conf sets ownership of the egress directory to syslog:syslog
 
-	//
-	//	err = os.Mkdir(resourceDir, 0777)
-	//	Expect(err).NotTo(HaveOccurred())
-	//
-	//	err = os.Mkdir(ingressDir, 0777)
-	//	Expect(err).NotTo(HaveOccurred())
-	//})
-
-	//AfterEach(func() {
-	//	err := os.RemoveAll(testDir)
-	//	Expect(err).ToNot(HaveOccurred())
-	//})
-
 	Context("when a short log is written directly to rsyslog udp listener", func() {
 
 		BeforeEach(func() {
-			err := os.Mkdir(testDir, 0777)
-			Expect(err).NotTo(HaveOccurred())
+			CreateFolders()
 
 			GenerateTestOutputConfig(egressFilename)
 			RestartSyslog()
@@ -66,14 +52,12 @@ var _ = Describe("syslog", func() {
 			time.Sleep(time.Second) // wait for syslog to process the log entry
 
 			outputBytes := GetOutputBytes()
-
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
 			Expect(string(outputBytes)).To(ContainSubstring(basicTestLine))
 		})
 
 		AfterEach(func() {
-			err := os.RemoveAll(testDir)
-			Expect(err).ToNot(HaveOccurred())
+			CleanupTestDir()
 		})
 
 	})
@@ -85,37 +69,30 @@ var _ = Describe("syslog", func() {
 		)
 
 		BeforeEach(func() {
-			err := os.Mkdir(testDir, 0777)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = os.MkdirAll(ingressDir, 0777)
-			ExpectWithOffset(1, err).ToNot(HaveOccurred())
+			CreateFolders()
 
 			GenerateTestOutputConfig(egressFilename)
 			RestartSyslog()
 
-			// TODO - currently we assume that blackbox is installed and on PATH
-
 			bbSession = StartBlackbox(ingressDir, resourceDir)
 		})
 		//
-		XIt("is written to a configured Output Module", func() {
+		It("is written to a configured Output Module", func() {
 
 			file, err := os.Create(ingressDir + "/watched_by_blackbox.log")
-
 			Expect(err).ToNot(HaveOccurred())
 			defer file.Close()
+
+			time.Sleep(5 * time.Second) // wait for syslog to process the log entry
 
 			n, err := file.Write([]byte(basicTestLine + "\n"))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(n).ToNot(Equal(0))
 
 			time.Sleep(time.Second) // wait for syslog to process the log entry
-
 			// TODO - configure the syslog so that the target depends on test setup
 
 			outputBytes := GetOutputBytes()
-
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
 			Expect(string(outputBytes)).To(ContainSubstring(basicTestLine))
 
@@ -123,23 +100,18 @@ var _ = Describe("syslog", func() {
 
 		AfterEach(func() {
 			bbSession.Terminate()
-			err := os.RemoveAll(testDir)
-			Expect(err).ToNot(HaveOccurred())
+			CleanupTestDir()
 		})
 	})
 
-	Context("when a long log is written to a file watched by blackbox", func() {
+	XContext("when a long log is written to a file watched by blackbox", func() {
 
 		var (
 			bbSession *gexec.Session
 		)
 
 		BeforeEach(func() {
-			err := os.Mkdir(testDir, 0777)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = os.MkdirAll(ingressDir, 0777)
-			ExpectWithOffset(1, err).ToNot(HaveOccurred())
+			CreateFolders()
 
 			GenerateTestOutputConfig(egressFilename)
 			RestartSyslog()
@@ -147,11 +119,13 @@ var _ = Describe("syslog", func() {
 			bbSession = StartBlackbox(ingressDir, resourceDir)
 		})
 
-		XIt("is written to a configured Output Module", func() {
+		It("is written to a configured Output Module", func() {
 
 			file, err := os.Create(ingressDir + "/watched_by_blackbox.log")
 			Expect(err).ToNot(HaveOccurred())
 			defer file.Close()
+
+			time.Sleep(5 * time.Second)
 
 			n, err := file.Write([]byte(longTestLine + "\n"))
 			Expect(err).ToNot(HaveOccurred())
@@ -160,19 +134,28 @@ var _ = Describe("syslog", func() {
 			time.Sleep(time.Second)
 
 			outputBytes := GetOutputBytes()
-
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
 			Expect(string(outputBytes)).To(ContainSubstring(longTestLine))
 		})
 
 		AfterEach(func() {
 			bbSession.Terminate()
-			err := os.RemoveAll(testDir)
-			Expect(err).ToNot(HaveOccurred())
-
+			CleanupTestDir()
 		})
 	})
 })
+
+func CreateFolders() {
+	err := os.Mkdir(testDir, 0777)
+	Expect(err).NotTo(HaveOccurred())
+	err = os.MkdirAll(ingressDir, 0777)
+	ExpectWithOffset(1, err).ToNot(HaveOccurred())
+}
+
+func CleanupTestDir() {
+	err := os.RemoveAll(testDir)
+	Expect(err).ToNot(HaveOccurred())
+}
 
 func GetOutputBytes() []byte {
 	outputFile, err := os.Open(egressFilename)
