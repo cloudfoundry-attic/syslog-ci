@@ -27,7 +27,7 @@ type BlackBoxConfigOptions struct {
 	SourceDir string
 }
 
-func GenerateBlackBoxConfig(options BlackBoxConfigOptions, dest string) {
+func generateBlackBoxConfig(options BlackBoxConfigOptions, dest string) {
 	err := os.MkdirAll(dest, 0777)
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
 
@@ -56,7 +56,7 @@ func StartBlackbox(ingressDir, resourceDir string) *gexec.Session {
 
 	// TODO - currently we assume that blackbox is installed and on PATH
 
-	GenerateBlackBoxConfig(bbOptions, resourceDir)
+	generateBlackBoxConfig(bbOptions, resourceDir)
 
 	cmd := exec.Command(
 		"blackbox",

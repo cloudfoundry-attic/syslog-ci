@@ -24,7 +24,7 @@ var (
 	ingressDir     = fmt.Sprintf("%s/ingress/test", testDir)
 	egressFilename = fmt.Sprintf("%s/egress/output_from_syslog.log", testDir)
 	basicTestLine  = counterString(100, "*")
-	longTestLine   = counterString(1025, "*")
+	longTestLine   = counterString(1025, "*") // TCP protocol works up to 8K, UDP only to 1K
 )
 
 var _ = Describe("syslog", func() {
@@ -35,7 +35,7 @@ var _ = Describe("syslog", func() {
 	Context("when a short log is written directly to rsyslog udp listener", func() {
 
 		BeforeEach(func() {
-			CreateFolders()
+			createFolders()
 
 			GenerateTestOutputConfig(egressFilename)
 			RestartSyslog()
@@ -53,13 +53,13 @@ var _ = Describe("syslog", func() {
 
 			time.Sleep(time.Second) // wait for syslog to process the log entry
 
-			outputBytes := GetOutputBytes()
+			outputBytes := getOutputBytes()
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
 			Expect(string(outputBytes)).To(ContainSubstring(basicTestLine))
 		})
 
 		AfterEach(func() {
-			CleanupTestDir()
+			cleanupTestDir()
 		})
 
 	})
@@ -71,14 +71,14 @@ var _ = Describe("syslog", func() {
 		)
 
 		BeforeEach(func() {
-			CreateFolders()
+			createFolders()
 
 			GenerateTestOutputConfig(egressFilename)
 			RestartSyslog()
 
 			bbSession = StartBlackbox(ingressDir, resourceDir)
 		})
-		//
+
 		It("is written to a configured Output Module", func() {
 
 			file, err := os.Create(ingressDir + "/watched_by_blackbox.log")
@@ -94,15 +94,14 @@ var _ = Describe("syslog", func() {
 			time.Sleep(time.Second) // wait for syslog to process the log entry
 			// TODO - configure the syslog so that the target depends on test setup
 
-			outputBytes := GetOutputBytes()
+			outputBytes := getOutputBytes()
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
 			Expect(string(outputBytes)).To(ContainSubstring(basicTestLine))
-
 		})
 
 		AfterEach(func() {
 			bbSession.Terminate()
-			CleanupTestDir()
+			cleanupTestDir()
 		})
 	})
 
@@ -113,7 +112,7 @@ var _ = Describe("syslog", func() {
 		)
 
 		BeforeEach(func() {
-			CreateFolders()
+			createFolders()
 
 			GenerateTestOutputConfig(egressFilename)
 			RestartSyslog()
@@ -135,31 +134,31 @@ var _ = Describe("syslog", func() {
 
 			time.Sleep(time.Second)
 
-			outputBytes := GetOutputBytes()
+			outputBytes := getOutputBytes()
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
 			Expect(string(outputBytes)).To(ContainSubstring(longTestLine))
 		})
 
 		AfterEach(func() {
 			bbSession.Terminate()
-			CleanupTestDir()
+			cleanupTestDir()
 		})
 	})
 })
 
-func CreateFolders() {
+func createFolders() {
 	err := os.Mkdir(testDir, 0777)
 	Expect(err).NotTo(HaveOccurred())
 	err = os.MkdirAll(ingressDir, 0777)
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
 }
 
-func CleanupTestDir() {
+func cleanupTestDir() {
 	err := os.RemoveAll(testDir)
 	Expect(err).ToNot(HaveOccurred())
 }
 
-func GetOutputBytes() []byte {
+func getOutputBytes() []byte {
 	outputFile, err := os.Open(egressFilename)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	outputBytes, err := ioutil.ReadAll(bufio.NewReader(outputFile))
