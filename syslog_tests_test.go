@@ -104,7 +104,7 @@ var _ = Describe("syslog", func() {
 		})
 	})
 
-	XContext("when a long log is written to a file watched by blackbox", func() {
+	Context("when a long log is written to a file watched by blackbox", func() {
 
 		var (
 			bbSession *gexec.Session

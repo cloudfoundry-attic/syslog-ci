@@ -49,8 +49,8 @@ func GenerateBlackBoxConfig(options BlackBoxConfigOptions, dest string) {
 
 func StartBlackbox(ingressDir, resourceDir string) *gexec.Session {
 	bbOptions := BlackBoxConfigOptions{
-		Transport: "udp",
-		Address:   "127.0.0.1:514",
+		Transport: "tcp",
+		Address:   "127.0.0.1:515",
 		SourceDir: path.Dir(ingressDir),
 	}
 
