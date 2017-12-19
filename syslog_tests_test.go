@@ -43,6 +43,8 @@ var _ = Describe("syslog", func() {
 
 		It("syslog writes received logs to file", func() {
 			conn, err := net.Dial("udp", "127.0.0.1:514")
+			defer conn.Close()
+
 			Expect(err).ToNot(HaveOccurred())
 
 			n, err := conn.Write([]byte(basicTestLine + "\n"))
