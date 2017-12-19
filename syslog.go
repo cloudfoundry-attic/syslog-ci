@@ -10,15 +10,18 @@ import (
 )
 
 var syslog_config_template = `
+$umask 0000
 $ModLoad imuxsock
 $ModLoad imudp
+$ModLoad imtcp
 $UDPServerAddress 127.0.0.1
 $UDPServerRun 514
+$InputTCPServerRun 515
 
 action(
   type="omfile"
-  dirCreateMode="0755"
-  fileCreateMode="0644"
+  dirCreateMode="0777"
+  fileCreateMode="0777"
   dirOwner="syslog"
   dirGroup="syslog"
   fileOwner="syslog"

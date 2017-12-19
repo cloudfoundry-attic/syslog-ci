@@ -11,6 +11,8 @@ import (
 
 	"net"
 
+	"strconv"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -21,7 +23,8 @@ var (
 	resourceDir    = fmt.Sprintf("%s/resources", testDir)
 	ingressDir     = fmt.Sprintf("%s/ingress", testDir)
 	egressFilename = fmt.Sprintf("%s/egress/output_from_syslog.log", testDir)
-	testString     = "hello logging world!"
+	basicTestLine  = counterString(100)
+	longTestLine   = counterString(1025)
 )
 
 var _ = Describe("syslog", func() {
@@ -45,7 +48,7 @@ var _ = Describe("syslog", func() {
 	//	Expect(err).ToNot(HaveOccurred())
 	//})
 
-	Context("when a log is written directly to rsyslog udp listener", func() {
+	Context("when a short log is written directly to rsyslog udp listener", func() {
 
 		BeforeEach(func() {
 
@@ -57,7 +60,7 @@ var _ = Describe("syslog", func() {
 			conn, err := net.Dial("udp", "127.0.0.1:514")
 			Expect(err).ToNot(HaveOccurred())
 
-			n, err := conn.Write([]byte(testString))
+			n, err := conn.Write([]byte(basicTestLine + "\n"))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(n).To(BeNumerically(">", 0))
 
@@ -66,11 +69,11 @@ var _ = Describe("syslog", func() {
 			outputBytes := GetOutputBytes()
 
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
-			Expect(string(outputBytes)).To(ContainSubstring(testString))
+			Expect(string(outputBytes)).To(ContainSubstring(basicTestLine))
 		})
 	})
 
-	Context("when a log is written to a file watched by blackbox", func() {
+	Context("when a short log is written to a file watched by blackbox", func() {
 
 		var (
 			bbSession *gexec.Session
@@ -85,14 +88,14 @@ var _ = Describe("syslog", func() {
 
 			bbSession = StartBlackbox(ingressDir, resourceDir)
 		})
-
+		//
 		It("is written to a configured Output Module", func() {
 
 			file, err := os.Create(ingressDir + "/watched_by_blackbox.log")
 			Expect(err).ToNot(HaveOccurred())
 			defer file.Close()
 
-			n, err := file.Write([]byte(testString + "\n"))
+			n, err := file.Write([]byte(basicTestLine + "\n"))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(n).ToNot(Equal(0))
 
@@ -103,13 +106,59 @@ var _ = Describe("syslog", func() {
 			outputBytes := GetOutputBytes()
 
 			Expect(len(outputBytes)).ShouldNot(Equal(0))
-			Expect(string(outputBytes)).To(ContainSubstring(testString))
+			Expect(string(outputBytes)).To(ContainSubstring(basicTestLine))
+
 		})
 
 		AfterEach(func() {
 			bbSession.Terminate()
+			err := os.Remove(egressFilename)
+			Expect(err).ToNot(HaveOccurred())
+			err = os.Remove(ingressDir + "/watched_by_blackbox.log")
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
+
+	//	Context("when a long log is written to a file watched by blackbox", func() {
+	//
+	//		var (
+	//			bbSession *gexec.Session
+	//		)
+	//
+	//		BeforeEach(func() {
+	//			GenerateTestOutputConfig(egressFilename)
+	//			RestartSyslog()
+	//
+	//			bbSession = StartBlackbox(ingressDir, resourceDir)
+	//		})
+	//
+	//		It("is written to a configured Output Module", func() {
+	//
+	//			file, err := os.Create(ingressDir + "/watched_by_blackbox.log")
+	//			Expect(err).ToNot(HaveOccurred())
+	//			defer file.Close()
+	//
+	//			n, err := file.Write([]byte(longTestLine + "\n"))
+	//			Expect(err).ToNot(HaveOccurred())
+	//			Expect(n).ToNot(Equal(0))
+	//
+	//			time.Sleep(time.Second)
+	//
+	//			outputBytes := GetOutputBytes()
+	//
+	//			Expect(len(outputBytes)).ShouldNot(Equal(0))
+	//			Expect(string(outputBytes)).To(ContainSubstring(longTestLine))
+	//		})
+	//
+	//		AfterEach(func() {
+	//			bbSession.Terminate()
+	//			err := os.Remove(egressFilename)
+	//			Expect(err).ToNot(HaveOccurred())
+	//			err = os.Remove(ingressDir + "/watched_by_blackbox.log")
+	//			Expect(err).ToNot(HaveOccurred())
+	//
+	//		})
+	//	})
 })
 
 func GetOutputBytes() []byte {
@@ -118,4 +167,14 @@ func GetOutputBytes() []byte {
 	outputBytes, err := ioutil.ReadAll(bufio.NewReader(outputFile))
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
 	return outputBytes
+}
+
+func counterString(l int) string {
+	counterstring := ""
+	for len(counterstring) < l {
+		counterstring = counterstring + "*"
+		counterstring = counterstring + strconv.Itoa(len(counterstring))
+	}
+
+	return counterstring[:l]
 }
