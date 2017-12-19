@@ -31,6 +31,9 @@ type BlackBoxConfigOptions struct {
 }
 
 func GenerateBlackBoxConfig(options BlackBoxConfigOptions, dest string) {
+	err := os.MkdirAll(dest, 0777)
+	ExpectWithOffset(1, err).ToNot(HaveOccurred())
+
 	file, err := os.Create(dest + "/blackbox_config.yml")
 	ExpectWithOffset(1, err).ToNot(HaveOccurred())
 
