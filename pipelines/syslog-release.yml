@@ -2,6 +2,7 @@
 groups:
 - name: syslog-release
   jobs:
+  - syslog-acceptance-tests
   - deploy-cf-with-created-syslog
   - cf-acceptance-tests
   - delete-cf-deployment
@@ -167,6 +168,27 @@ jobs:
       params:
         repository: updated-bbl-state
         rebase: true
+
+- name: syslog-acceptance-tests
+  public: true
+  build_logs_to_retain: 100
+  plan:
+  - aggregate:
+    - get: syslog-release
+    - get: tycho-env-bbl-state
+  - task: syslog-acceptance
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/bosh-cli
+      run:
+        path: syslog-release/tests/scripts/test
+        args: ["use-bbl-env", "tycho-env-bbl-state"]
+      inputs:
+      - syslog-release
+      - tycho-env-bbl-state
 
 - name: deploy-cf-with-created-syslog
   serial_groups: [tycho]
