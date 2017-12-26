@@ -175,6 +175,7 @@ jobs:
   plan:
   - aggregate:
     - get: syslog-release
+      trigger: true
     - get: tycho-env-bbl-state
   - task: syslog-acceptance
     config:
@@ -185,7 +186,7 @@ jobs:
           repository: relintdockerhubpushbot/bosh-cli
       run:
         path: syslog-release/tests/scripts/test
-        args: ["use-bbl-env", "tycho-env-bbl-state"]
+        args: ["-e", "./tycho-env-bbl-state"]
       inputs:
       - syslog-release
       - tycho-env-bbl-state
