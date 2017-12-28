@@ -170,7 +170,7 @@ jobs:
         rebase: true
 
 - name: syslog-acceptance-tests
-  public: true
+  public: false
   build_logs_to_retain: 100
   plan:
   - aggregate:
@@ -185,11 +185,20 @@ jobs:
         source:
           repository: relintdockerhubpushbot/bosh-cli
       run:
-        path: syslog-release/tests/scripts/test
-        args: ["-e", "./tycho-env-bbl-state"]
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            workspace=$PWD
+            mkdir -p $GOPATH/src/github.com/cloudfoundry
+            ln -s $workspace/syslog-release $GOPATH/src/github.com/cloudfoundry/syslog-release
+
+            cd $GOPATH/src/github.com/cloudfoundry/syslog-release/tests
+              ./scripts/test -e $workspace/tycho-env-bbl-state
       inputs:
-      - syslog-release
-      - tycho-env-bbl-state
+      - name: syslog-release
+      - name: tycho-env-bbl-state
 
 - name: deploy-cf-with-created-syslog
   serial_groups: [tycho]
