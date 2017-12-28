@@ -183,19 +183,30 @@ jobs:
       image_resource:
         type: docker-image
         source:
-          repository: relintdockerhubpushbot/bosh-cli
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v3
       run:
         path: bash
         args:
           - -c
           - |
             #!/bin/bash
+
+            set -e
+
             workspace=$PWD
             mkdir -p $GOPATH/src/github.com/cloudfoundry
             ln -s $workspace/syslog-release $GOPATH/src/github.com/cloudfoundry/syslog-release
 
-            cd $GOPATH/src/github.com/cloudfoundry/syslog-release/tests
-              ./scripts/test -e $workspace/tycho-env-bbl-state
+            pushd $workspace/tycho-env-bbl-state
+              source .envrc
+            popd
+
+            pushd $GOPATH/src/github.com/cloudfoundry/syslog-release/tests
+              ./scripts/test
+            popd
+      caches:
+      - path: syslog-release/blobs
       inputs:
       - name: syslog-release
       - name: tycho-env-bbl-state
