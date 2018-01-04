@@ -7,6 +7,7 @@ groups:
   - cf-acceptance-tests
   - delete-cf-deployment
   - create-final-release-patch
+  - create-final-release-minor
 - name: infrastructure
   jobs:
   - setup-infrastructure
@@ -331,10 +332,40 @@ jobs:
   - aggregate:
     - get: syslog-ci
     - get: syslog-release
-      passed: [cf-acceptance-tests]
+      passed: [cf-acceptance-tests, syslog-acceptance-tests]
     - get: syslog-release-master
     - get: syslog-release-version
       params: { bump: patch }
+  - task: create-final-release
+    file: syslog-ci/tasks/create-final-release/task.yml
+    input_mapping:
+      release-repo: syslog-release
+      release-version: syslog-release-version
+    params:
+      BLOBS_BUCKET_ACCESS_KEY_ID: ((syslog_release_blobs_buckets_access_key_id))
+      BLOBS_BUCKET_SECRET_KEY: ((syslog_release_blobs_buckets_secret_access_key))
+  - put: syslog-release-master
+    params:
+      repository: final-release-repo
+      tag: syslog-release-version/version
+      tag_prefix: v
+  - put: syslog-release-develop
+    params:
+      repository: syslog-release-master
+      merge: true
+  - put: syslog-release-version
+    params: { file: syslog-release-version/version }
+- name: create-final-release-minor
+  public: true
+  build_logs_to_retain: 100
+  plan:
+  - aggregate:
+    - get: syslog-ci
+    - get: syslog-release
+      passed: [cf-acceptance-tests, syslog-acceptance-tests]
+    - get: syslog-release-master
+    - get: syslog-release-version
+      params: { bump: minor }
   - task: create-final-release
     file: syslog-ci/tasks/create-final-release/task.yml
     input_mapping:
