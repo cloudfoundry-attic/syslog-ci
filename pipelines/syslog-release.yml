@@ -246,7 +246,6 @@ jobs:
         operations/use-compiled-releases.yml
         operations/addons/enable-component-syslog.yml
         operations/experimental/use-bosh-dns.yml
-        operations/test/add-datadog-firehose-nozzle.yml
       SYSTEM_DOMAIN: tycho.cf-app.com
       VARS_FILES: component_syslog_vars.yml
     ensure:
