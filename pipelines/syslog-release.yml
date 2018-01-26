@@ -172,6 +172,7 @@ jobs:
 
 - name: syslog-acceptance-tests
   public: true
+  serial: true
   build_logs_to_retain: 100
   plan:
   - aggregate:
