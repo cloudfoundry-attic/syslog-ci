@@ -205,7 +205,7 @@ jobs:
             popd
 
             pushd $GOPATH/src/github.com/cloudfoundry/syslog-release
-              ./scripts/test -p
+              ./scripts/test -nodes=10
             popd
       caches:
       - path: syslog-release/blobs
