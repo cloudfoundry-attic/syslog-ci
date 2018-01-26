@@ -203,7 +203,7 @@ jobs:
               source .envrc
             popd
 
-            pushd $GOPATH/src/github.com/cloudfoundry/syslog-release/tests
+            pushd $GOPATH/src/github.com/cloudfoundry/syslog-release
               ./scripts/test -p -nodes=7
             popd
       caches:
