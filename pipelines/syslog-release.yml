@@ -142,7 +142,7 @@ jobs:
       BBL_LB_KEY: ((tycho_cf_ssl_cert_private_key))
       LB_DOMAIN: tycho.cf-app.com
       BBL_ENV_NAME: tycho
-      OPS_FILES: "local-dns.yml"
+      OPS_FILES: "local-dns.yml ../bbl-state/operations/add-bosh-workers.yml"
     input_mapping:
       bbl-state: tycho-env-bbl-state
       ops-files: bosh-deployment
