@@ -130,6 +130,7 @@ jobs:
     - get: cf-deployment-concourse-tasks
     - get: tycho-env-bbl-state
     - get: bosh-deployment
+      version: {ref: "c4837732309447fd67c554d219d795163f6e99d0"}
   - task: setup-infrastructure
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     params:
