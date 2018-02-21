@@ -223,6 +223,7 @@ jobs:
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: cf-deployment-master
+      trigger: true
     - get: tycho-env-bbl-state
     - get: tycho-env-vars-store
     - get: tycho-env-integration-configs
