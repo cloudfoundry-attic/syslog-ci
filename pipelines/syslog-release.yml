@@ -79,6 +79,7 @@ resources:
     paths:
     - deployment-vars.yml
     - component_syslog_vars.yml
+    - operations/*
 - name: tycho-env-integration-configs
   type: git
   source:
@@ -248,6 +249,7 @@ jobs:
         operations/use-compiled-releases.yml
         operations/addons/enable-component-syslog.yml
         operations/experimental/use-bosh-dns.yml
+        ../vars-files/operations/set-uaa-debug.yml
       SYSTEM_DOMAIN: tycho.cf-app.com
       VARS_FILES: component_syslog_vars.yml
     ensure:
