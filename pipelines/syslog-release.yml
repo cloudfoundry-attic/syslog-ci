@@ -15,11 +15,6 @@ groups:
 
 resources:
 # Manifests and Releases
-- name: bosh-deployment
-  type: git
-  source:
-    branch: master
-    uri: https://github.com/cloudfoundry/bosh-deployment.git
 - name: cf-deployment-master
   type: git
   source:
@@ -42,8 +37,8 @@ resources:
     private_key: ((syslog_release_read_write_deploy_key))
     uri: git@github.com:cloudfoundry/syslog-release.git
     ignore_paths:
-    - ".final_builds/*"
-    - "releases/*"
+    - .final_builds/*
+    - releases/*
 - name: syslog-release-master
   type: git
   source:
@@ -68,7 +63,7 @@ resources:
     uri: git@github.com:cloudfoundry/tycho-env.git
     private_key: ((tycho_env_git_deploy_key))
     paths:
-    - bbl-state.json
+    - bbl-state/*
     - google_account_creds.json
 - name: tycho-env-vars-store
   type: git
@@ -79,7 +74,6 @@ resources:
     paths:
     - deployment-vars.yml
     - component_syslog_vars.yml
-    - operations/*
 - name: tycho-env-integration-configs
   type: git
   source:
@@ -114,7 +108,7 @@ resources:
   source:
     branch: master
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
-    tag_filter: v4.*
+    tag_filter: v5.*
 - name: syslog-ci
   type: git
   source:
@@ -130,8 +124,6 @@ jobs:
   - aggregate:
     - get: cf-deployment-concourse-tasks
     - get: tycho-env-bbl-state
-    - get: bosh-deployment
-      version: {ref: "c4837732309447fd67c554d219d795163f6e99d0"}
   - task: setup-infrastructure
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
     params:
@@ -144,14 +136,14 @@ jobs:
       BBL_LB_KEY: ((tycho_cf_ssl_cert_private_key))
       LB_DOMAIN: tycho.cf-app.com
       BBL_ENV_NAME: tycho
-      OPS_FILES: "local-dns.yml ../bbl-state/operations/add-bosh-workers.yml"
+      OPS_FILES: "operations/add-bosh-workers.yml"
     input_mapping:
-      bbl-state: tycho-env-bbl-state
-      ops-files: bosh-deployment
+      env-repo: tycho-env-bbl-state
+      ops-files: tycho-env-bbl-state
     ensure:
       put: tycho-env-bbl-state
       params:
-        repository: updated-bbl-state
+        repository: updated-env-repo
         rebase: true
 
 - name: destroy-infrastructure
@@ -165,11 +157,11 @@ jobs:
   - task: destroy-infrastructure
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     input_mapping:
-      bbl-state: tycho-env-bbl-state
+      env-repo: tycho-env-bbl-state
     ensure:
       put: tycho-env-bbl-state
       params:
-        repository: updated-bbl-state
+        repository: updated-env-repo
         rebase: true
 
 - name: syslog-acceptance-tests
@@ -188,7 +180,7 @@ jobs:
         type: docker-image
         source:
           repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v3
+          tag: v4.12.0
       run:
         path: bash
         args:
@@ -234,12 +226,12 @@ jobs:
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     input_mapping:
-      bbl-state: tycho-env-bbl-state
+      env-repo: tycho-env-bbl-state
       cf-deployment: cf-deployment-master
   - task: deploy-cf-with-created-syslog
     file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
     input_mapping:
-      bbl-state: tycho-env-bbl-state
+      env-repo: tycho-env-bbl-state
       cf-deployment: cf-deployment-master
       release: syslog-release
       ops-files: cf-deployment-master
@@ -272,7 +264,7 @@ jobs:
   - task: run-bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     input_mapping:
-      bbl-state: tycho-env-bbl-state
+      env-repo: tycho-env-bbl-state
 
 - name: cf-acceptance-tests
   serial_groups: [tycho]
@@ -303,6 +295,9 @@ jobs:
       vars-store: tycho-env-vars-store
     params:
       SYSTEM_DOMAIN: tycho.cf-app.com
+      ENABLED_FEATURE_FLAGS: |
+        diego_docker
+        task_creation
   - task: run-cats
     input_mapping:
       integration-config: tycho-env-integration-configs
@@ -329,7 +324,7 @@ jobs:
   - task: delete-cf-deployment
     file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
     input_mapping:
-      bbl-state: tycho-env-bbl-state
+      env-repo: tycho-env-bbl-state
 
 - name: create-final-release-patch
   public: true
