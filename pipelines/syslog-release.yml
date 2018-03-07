@@ -65,6 +65,7 @@ resources:
     paths:
     - bbl-state/*
     - google_account_creds.json
+    - operations/*
 - name: tycho-env-vars-store
   type: git
   source:
@@ -194,6 +195,12 @@ jobs:
             mkdir -p $GOPATH/src/github.com/cloudfoundry
             ln -s $workspace/syslog-release $GOPATH/src/github.com/cloudfoundry/syslog-release
 
+            function kill_bbl_ssh {
+              pkill ssh || true
+            }
+
+            trap kill_bbl_ssh EXIT
+
             pushd $workspace/tycho-env-bbl-state
               source .envrc
             popd
@@ -305,6 +312,7 @@ jobs:
     file: cats-concourse-task/task.yml
     params:
       CONFIG_FILE_PATH: cats_integration_config.json
+      NODES: 6
 
 - name: delete-cf-deployment
   public: true
