@@ -25,11 +25,6 @@ resources:
   source:
     branch: master
     uri: https://github.com/cloudfoundry/cf-acceptance-tests.git
-- name: cats-concourse-task
-  type: git
-  source:
-    branch: master
-    uri: https://github.com/cloudfoundry/cats-concourse-task.git
 - name: syslog-release
   type: git
   source:
@@ -64,6 +59,7 @@ resources:
     private_key: ((tycho_env_git_deploy_key))
     paths:
     - bbl-state/*
+    - bbl-config/*
     - google_account_creds.json
     - operations/*
 - name: tycho-env-vars-store
@@ -109,7 +105,7 @@ resources:
   source:
     branch: master
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
-    tag_filter: v5.*
+    tag_filter: v6.*
 - name: syslog-ci
   type: git
   source:
@@ -135,16 +131,16 @@ jobs:
       BBL_GCP_ZONE: us-central1-a
       BBL_LB_CERT: ((tycho_cf_ssl_cert))
       BBL_LB_KEY: ((tycho_cf_ssl_cert_private_key))
+      BBL_CONFIG_DIR: bbl-config
       LB_DOMAIN: tycho.cf-app.com
       BBL_ENV_NAME: tycho
-      OPS_FILES: "operations/add-bosh-workers.yml"
     input_mapping:
-      env-repo: tycho-env-bbl-state
-      ops-files: tycho-env-bbl-state
+      bbl-state: tycho-env-bbl-state
+      bbl-config: tycho-env-bbl-state
     ensure:
       put: tycho-env-bbl-state
       params:
-        repository: updated-env-repo
+        repository: updated-bbl-state
         rebase: true
 
 - name: destroy-infrastructure
@@ -158,11 +154,12 @@ jobs:
   - task: destroy-infrastructure
     file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
     input_mapping:
-      env-repo: tycho-env-bbl-state
+      bbl-state: tycho-env-bbl-state
+      bbl-config: tycho-env-bbl-state
     ensure:
       put: tycho-env-bbl-state
       params:
-        repository: updated-env-repo
+        repository: updated-bbl-state
         rebase: true
 
 - name: syslog-acceptance-tests
@@ -233,12 +230,13 @@ jobs:
   - task: upload-stemcell
     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
     input_mapping:
-      env-repo: tycho-env-bbl-state
+      bbl-state: tycho-env-bbl-state
       cf-deployment: cf-deployment-master
   - task: deploy-cf-with-created-syslog
     file: cf-deployment-concourse-tasks/bosh-deploy-with-created-release/task.yml
     input_mapping:
-      env-repo: tycho-env-bbl-state
+      bbl-state: tycho-env-bbl-state
+      bbl-config: tycho-env-bbl-state
       cf-deployment: cf-deployment-master
       release: syslog-release
       ops-files: cf-deployment-master
@@ -253,6 +251,7 @@ jobs:
         ../vars-files/operations/cf-instances.yml
       SYSTEM_DOMAIN: tycho.cf-app.com
       VARS_FILES: component_syslog_vars.yml
+      BBL_CONFIG_DIR: bbl-config
     ensure:
       put: tycho-env-vars-store
       params:
@@ -271,7 +270,8 @@ jobs:
   - task: run-bosh-cleanup
     file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
     input_mapping:
-      env-repo: tycho-env-bbl-state
+      bbl-state: tycho-env-bbl-state
+      bbl-config: tycho-env-bbl-state
 
 - name: cf-acceptance-tests
   serial_groups: [tycho]
@@ -279,7 +279,6 @@ jobs:
   build_logs_to_retain: 100
   plan:
   - aggregate:
-    - get: cats-concourse-task
     - get: cf-acceptance-tests
     - get: cf-deployment-master
       passed: [deploy-cf-with-created-syslog]
@@ -308,7 +307,7 @@ jobs:
   - task: run-cats
     input_mapping:
       integration-config: tycho-env-integration-configs
-    file: cats-concourse-task/task.yml
+    file: cf-deployment-concourse-tasks/run-cats/task.yml
     params:
       CONFIG_FILE_PATH: cats_integration_config.json
       NODES: 6
@@ -332,7 +331,8 @@ jobs:
   - task: delete-cf-deployment
     file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
     input_mapping:
-      env-repo: tycho-env-bbl-state
+      bbl-state: tycho-env-bbl-state
+      bbl-config: tycho-env-bbl-state
 
 - name: create-final-release-patch
   public: true
