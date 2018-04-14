@@ -71,6 +71,7 @@ resources:
     paths:
     - deployment-vars.yml
     - component_syslog_vars.yml
+    - operations/*
 - name: tycho-env-integration-configs
   type: git
   source:
@@ -244,10 +245,11 @@ jobs:
       vars-files: tycho-env-vars-store
     params:
       OPS_FILES: |
-        operations/use-compiled-releases.yml
         operations/addons/enable-component-syslog.yml
         operations/experimental/use-bosh-dns.yml
         operations/scale-to-one-az.yml
+        operations/windows2016-cell.yml
+        ../vars-files/operations/windows-enable-component-syslog.yml
         ../vars-files/operations/cf-instances.yml
       SYSTEM_DOMAIN: tycho.cf-app.com
       VARS_FILES: component_syslog_vars.yml
