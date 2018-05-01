@@ -251,6 +251,7 @@ jobs:
         operations/windows2016-cell.yml
         ../vars-files/operations/windows-enable-component-syslog.yml
         ../vars-files/operations/cf-instances.yml
+        ../vars-files/operations/audit-logging-test.yml
       SYSTEM_DOMAIN: tycho.cf-app.com
       VARS_FILES: component_syslog_vars.yml
       BBL_CONFIG_DIR: bbl-config
