@@ -27,5 +27,5 @@ pushd release
   write_private_yaml
   bosh vendor-package ${PACKAGE_NAME} ../package-release
   commit
-  git clone release updated-release
 popd
+git clone release updated-release
