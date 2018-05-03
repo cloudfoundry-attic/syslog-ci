@@ -55,7 +55,7 @@ resources:
   type: git
   source:
     branch: master
-    uri: git@github.com:bosh-packages/golang-release
+    uri: https://github.com/bosh-packages/golang-release.git
     tag_filter: '*'
 
 # ENV
