@@ -20,7 +20,7 @@ function commit() {
   git config user.name "CF Syslog Bot"
   git config user.email "cf-syslog@pivotal.io"
   git add .
-  git commit -m "Bump version of ${PACKAGE_NAME}"
+  git commit -m "Use current version of ${PACKAGE_NAME}" --allow-empty
 }
 
 pushd release
