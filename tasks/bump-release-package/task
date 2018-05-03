@@ -25,7 +25,7 @@ function commit() {
 
 pushd release
   write_private_yaml
-  bosh vender-package ${PACKAGE_NAME} ../package-release
+  bosh vendor-package ${PACKAGE_NAME} ../package-release
   commit
   git clone release updated-release
 popd
