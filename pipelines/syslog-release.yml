@@ -2,6 +2,7 @@
 groups:
 - name: syslog-release
   jobs:
+  - bump-go-package
   - syslog-acceptance-tests
   - deploy-cf-with-created-syslog
   - cf-acceptance-tests
@@ -49,6 +50,13 @@ resources:
     branch: develop
     private_key: ((syslog_release_read_write_deploy_key))
     uri: git@github.com:cloudfoundry/syslog-release.git
+
+- name: golang-release
+  type: git
+  source:
+    branch: master
+    uri: git@github.com:bosh-packages/golang-release
+    tag_filter: '*'
 
 # ENV
 - name: tycho-env-bbl-state
@@ -162,6 +170,28 @@ jobs:
       params:
         repository: updated-bbl-state
         rebase: true
+- name: bump-go-package
+  public: true
+  serial: true
+  build_logs_to_retain: 100
+  plan:
+  - aggregate:
+    - get: golang-release
+      trigger: true
+    - get: syslog-ci
+    - get: syslog-release
+  - task: bump-go-package
+    file: syslog-ci/tasks/bump-release-package.yml
+    input_mapping:
+      release: syslog-release
+      package-release: golang-release
+    params:
+      BLOBS_BUCKET_ACCESS_KEY_ID: ((syslog_release_blobs_buckets_access_key_id))
+      BLOBS_BUCKET_SECRET_KEY: ((syslog_release_blobs_buckets_secret_access_key))
+      PACKAGE_NAME: golang-1-linux
+  - put: syslog-release-develop
+    params:
+      repository: updated-release
 
 - name: syslog-acceptance-tests
   public: true

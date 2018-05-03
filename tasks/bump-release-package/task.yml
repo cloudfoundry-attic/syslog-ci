@@ -9,15 +9,16 @@ image_resource:
 
 inputs:
 - name: syslog-ci
-- name: release-repo
-- name: release-version
+- name: release
+- name: package-release
 
 outputs:
-  - name: final-release-repo
+  - name: updated-release
 
 run:
-  path: syslog-ci/tasks/create-final-release/task
+  path: syslog-ci/tasks/bump-release-package/task
 
 params:
   BLOBS_BUCKET_ACCESS_KEY_ID:
   BLOBS_BUCKET_SECRET_KEY:
+  PACKAGE_NAME:
